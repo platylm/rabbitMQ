@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/streadway/amqp"
 )
 
@@ -31,17 +33,24 @@ func main() {
 		log.Fatalf("%s : %s", "Failed to declare a queue", err)
 	}
 
-	body := "Hello World!" // เอาของเข้า queue
-	err = channel.Publish(
-		"",         // exchange
-		queue.Name, // routing key
-		false,      // mandatory
-		false,      // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
-		})
-	if err != nil {
-		log.Fatalf("%s : %s", "Failed to publish a message", err)
-	}
+	engine := gin.Default()
+	engine.GET("/send", func(context *gin.Context) {
+		body := context.Query("text") // เอาของเข้า queue
+		err = channel.Publish(
+			"",         // exchange
+			queue.Name, // routing key
+			false,      // mandatory
+			false,      // immediate
+			amqp.Publishing{
+				ContentType: "text/plain",
+				Body:        []byte(body),
+			},
+		)
+		if err != nil {
+			log.Printf("%s : %s", "Failed to publish a message", err)
+		}
+
+		context.Status(http.StatusOK)
+	})
+	engine.Run(":3000")
 }
