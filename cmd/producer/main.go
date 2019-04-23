@@ -19,7 +19,7 @@ func main() {
 	}
 	defer channel.Close()
 
-	_, err = channel.QueueDeclare( // คือการสร้าง Queue ใหม่
+	queue, err := channel.QueueDeclare( // คือการสร้าง Queue ใหม่
 		"hello", // name
 		false,   // durable * เป็น queue ถาวรไหม (survive a broker)
 		false,   // delete when unused * ไม่มีคนดึงข้อมูลใน queue จะลบทิ้งเลยหรือไม่
@@ -29,5 +29,19 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalf("%s : %s", "Failed to declare a queue", err)
+	}
+
+	body := "Hello World!" // เอาของเข้า queue
+	err = channel.Publish(
+		"",         // exchange
+		queue.Name, // routing key
+		false,      // mandatory
+		false,      // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(body),
+		})
+	if err != nil {
+		log.Fatalf("%s : %s", "Failed to publish a message", err)
 	}
 }
