@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -34,8 +35,13 @@ func main() {
 	}
 
 	engine := gin.Default()
-	engine.GET("/send", func(context *gin.Context) {
-		body := context.Query("text") // เอาของเข้า queue
+	engine.POST("/send", func(context *gin.Context) {
+		bytes, err := ioutil.ReadAll(context.Request.Body)
+		if err != nil {
+			context.Error(err)
+		}
+		log.Printf("%s\n", bytes)
+
 		err = channel.Publish(
 			"",         // exchange
 			queue.Name, // routing key
@@ -43,7 +49,7 @@ func main() {
 			false,      // immediate
 			amqp.Publishing{
 				ContentType: "text/plain",
-				Body:        []byte(body),
+				Body:        bytes,
 			},
 		)
 		if err != nil {
@@ -53,4 +59,9 @@ func main() {
 		context.Status(http.StatusOK)
 	})
 	engine.Run(":3000")
+}
+
+type Message struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
