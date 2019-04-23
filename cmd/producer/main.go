@@ -13,10 +13,6 @@ func main() {
 	}
 	defer connection.Close()
 
-	for {
-
-	}
-
 	channel, err := connection.Channel() // access channel เข้าไปใน connection
 	if err != nil {
 		log.Fatalf("%s : %s", "Failed to connect to RabbitMQ", err)
