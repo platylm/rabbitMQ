@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
+	"github.com/line/line-bot-sdk-go/linebot"
 	"github.com/streadway/amqp"
 )
 
@@ -46,12 +48,36 @@ func main() {
 
 	forever := make(chan bool)
 
+	bot, err := linebot.New("8638c2bc23e68293cf6f21b74360540b", "irmpecZpDyBUBzA5Bv3+6jDo2/P+o7FsLO6IloZe1y5ft0msR3PH/aDIPkuet1oyqDqOUkvXMB+HrWqC6gsQG+dDWETAMvsevBDqcEDIARAtoLHhV2tTNMtG7J+cW1ZS5sDsQTxVZDD8oMpZm+mtKwdB04t89/1O/w1cDnyilFU=")
+	if err != nil {
+		log.Fatalf("Failed to connect to linebot", err)
+	}
+
 	go func() {
 		for message := range messags {
 			log.Printf("Received a message: %s", message.Body)
+			var request Request
+			if err = json.Unmarshal(message.Body, &request); err != nil {
+				log.Printf("error %s", err)
+			}
+
+			_, err := bot.ReplyMessage(request.Events[0].ReplyToken, linebot.NewTextMessage("มีไรหรอ")).Do()
+			if err != nil {
+				log.Printf("error reply message %s", err)
+			}
+
+			message.Ack(false)
 		}
 	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
+}
+
+type Request struct {
+	Events []LineMessage `json:"events"`
+}
+
+type LineMessage struct {
+	ReplyToken string `json:"replyToken"`
 }
